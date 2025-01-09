@@ -1,3 +1,4 @@
+
 import 'package:ardennes/libraries/account_context/bloc.dart';
 import 'package:ardennes/libraries/account_context/state.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,40 +21,53 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (BuildContext context) => HomeScreenBloc(),
-      child: Builder(builder: (context) => _HomeScreenContent()),
+      create: (context) => HomeScreenBloc(),
+      child: const HomeScreenContent(),
     );
   }
 }
 
-class _HomeScreenContent extends StatelessWidget {
+class HomeScreenContent extends StatelessWidget {
+  const HomeScreenContent({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AccountContextBloc>().state;
+    print("here");
+    final accountState = context.watch<AccountContextBloc>().state;
 
-    if (state is AccountContextLoadedState) {
-      final selectedProject = state.selectedProject;
-      if (selectedProject != null) {
+    // Dispatch event if the selected project is available
+    if (accountState is AccountContextLoadedState &&
+        accountState.selectedProject != null) {
+      print("Ca;;");
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         context
             .read<HomeScreenBloc>()
-            .add(FetchHomeScreenContentEvent(selectedProject));
-      }
+            .add(FetchHomeScreenContentEvent(accountState.selectedProject!));
+      });
     }
 
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      Text("Welcome, ${FirebaseAuth.instance.currentUser?.displayName ?? ""}",
-          style: Theme.of(context).textTheme.titleLarge),
-      Text("Here's what's happening on your projects today.",
-          style: Theme.of(context).textTheme.titleSmall),
-      const SizedBox(height: 16),
-      Card(
-        elevation: 1,
-        child: ListTile(
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          "Welcome, ${FirebaseAuth.instance.currentUser?.displayName ?? ""}",
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        Text(
+          "Here's what's happening on your projects today.",
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 1,
+          child: ListTile(
             leading: const Icon(Icons.sticky_note_2),
             title: const Text('Add Sheets'),
-            onTap: () => context.go('/drawing-publish/file-upload')),
-      ),
-      const RecentlyViewedDrawings(),
-    ]);
+            onTap: () => context.go('/drawing-publish/file-upload'),
+          ),
+        ),
+        const RecentlyViewedDrawings(),
+      ],
+    );
   }
 }
