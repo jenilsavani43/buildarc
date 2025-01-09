@@ -16,11 +16,6 @@ class _ProjectsTitleState extends State<ProjectsTitle> {
   List<ProjectMetadata> projects = [];
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return BlocBuilder<AccountContextBloc, AccountContextState>(
         builder: (context, state) {

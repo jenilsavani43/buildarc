@@ -1,13 +1,19 @@
+import 'dart:developer';
+
+import 'package:ardennes/features/home_screen/bloc.dart';
+import 'package:ardennes/features/home_screen/state.dart';
 import 'package:ardennes/libraries/account_context/bloc.dart';
 import 'package:ardennes/libraries/account_context/state.dart';
 import 'package:ardennes/libraries/core_ui/image_downloading/image_firebase.dart';
 import 'package:ardennes/models/drawings/drawing_item.dart';
 import 'package:ardennes/models/drawings/drawings_catalog_data.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
 
+import '../home_screen/event.dart';
 import 'drawings_catalog_bloc.dart';
 import 'drawings_catalog_event.dart';
 import 'drawings_catalog_state.dart';
@@ -98,7 +104,7 @@ class DrawingsCatalogScreenState extends State<DrawingsCatalogScreen> {
   }
 }
 
-class DrawingGrid extends StatelessWidget {
+class DrawingGrid extends StatefulWidget {
   final List<DrawingItem> drawingItems;
   final String projectId;
 
@@ -109,35 +115,65 @@ class DrawingGrid extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 3,
-      children: drawingItems.map((drawing) {
-        return GestureDetector(
-          onTap: () {
-            context.go(
-              Uri(
-                path: '/drawings/sheet/',
-                queryParameters: {
-                  'number': drawing.title,
-                  'collection': drawing.collection,
-                  'versionId': drawing.versionId.toString(),
-                  'projectId': projectId
-                },
-              ).toString(),
-            );
-          },
-          child: Card(
-            child: Column(
-              children: [
-                Expanded(
-                    child: ImageFromFirebase(imageUrl: drawing.thumbnailUrl)),
-                Text(drawing.title),
-              ],
+  State<DrawingGrid> createState() => _DrawingGridState();
+}
+
+class _DrawingGridState extends State<DrawingGrid> {
+  HomeScreenBloc homeScreenBloc = HomeScreenBloc();
+  @override
+  Widget build(BuildContext contextt) {
+    return BlocConsumer<HomeScreenBloc, HomeScreenState>(
+      bloc: homeScreenBloc,
+      listener: (context, state) {},
+      builder: (context, state) => GridView.count(
+        crossAxisCount: 3,
+        children: widget.drawingItems.map((drawing) {
+          return GestureDetector(
+            onTap: () async {
+              context.go(
+                Uri(
+                  path: '/drawings/sheet/',
+                  queryParameters: {
+                    'number': drawing.title,
+                    'collection': drawing.collection,
+                    'versionId': drawing.versionId.toString(),
+                    'projectId': widget.projectId
+                  },
+                ).toString(),
+              );
+              List<DrawingsModel> temp = [
+                DrawingsModel(
+                  title: drawing.title,
+                  subtitle: "gfdhg",
+                  drawingThumbnailUrl: drawing.thumbnailUrl,
+                )
+              ];
+
+              log("temp :${temp.toList()}");
+              log("homeScreenBloc :$homeScreenBloc");
+              homeScreenBloc.add(
+                RecentlyViewedSheetsEvent(
+                  context: context,
+                  title: drawing.title,
+                  drawingThumbnailUrl: drawing.thumbnailUrl,
+                  projectId: widget.projectId,
+                  userId: FirebaseAuth.instance.currentUser?.uid ?? "",
+                  drawingsList: temp,
+                ),
+              );
+            },
+            child: Card(
+              child: Column(
+                children: [
+                  Expanded(
+                      child: ImageFromFirebase(imageUrl: drawing.thumbnailUrl)),
+                  Text(drawing.title),
+                ],
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }

@@ -1,70 +1,107 @@
+import 'dart:ui';
+
 import 'package:ardennes/features/home_screen/state.dart';
 import 'package:ardennes/libraries/core_ui/image_downloading/image_firebase.dart';
 import 'package:ardennes/libraries/core_ui/shimmer/bar_shimmer.dart';
-import 'package:ardennes/libraries/extensions/scoped.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'bloc.dart';
 
-class RecentlyViewedDrawings extends StatelessWidget {
+class RecentlyViewedDrawings extends StatefulWidget {
   const RecentlyViewedDrawings({Key? key}) : super(key: key);
 
   @override
+  State<RecentlyViewedDrawings> createState() => _RecentlyViewedDrawingsState();
+}
+
+class _RecentlyViewedDrawingsState extends State<RecentlyViewedDrawings> {
+  @override
   Widget build(BuildContext context) {
-    return Card(
+    return SingleChildScrollView(
+      child: Card(
         elevation: 1,
-        child: Column(children: [
-          ListTile(
-            leading: Text("Recently viewed sheets",
-                style: Theme.of(context).textTheme.titleLarge),
-            trailing: TextButton(
-              onPressed: () {},
-              child:
-                  Text("See all", style: Theme.of(context).textTheme.bodyLarge),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: Text(
+                "Recently viewed sheets",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              trailing: TextButton(
+                onPressed: () {},
+                child: Text(
+                  "See all",
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Divider(height: 0),
-          ),
-          SizedBox(
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Divider(height: 0),
+            ),
+            SizedBox(
               height: 240,
               child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ScrollConfiguration(
+                  behavior: WebScrollBehavior(),
                   child: BlocBuilder<HomeScreenBloc, HomeScreenState>(
-                      builder: (context, state) {
-                    if (state is FetchedHomeScreenContentState) {
-                      return ListView.separated(
-                        padding: const EdgeInsets.only(
-                            top: 16.0, bottom: 16.0, right: 16.0),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: state.recentlyViewedDrawingTiles.length,
-                        itemBuilder: (BuildContext context, int index) =>
-                            state.recentlyViewedDrawingTiles[index].let((tile) {
-                          return _RecentlyViewedDrawingTile(
+                    builder: (context, state) {
+                      if (state is FetchedHomeScreenContentState) {
+                        return ListView.separated(
+                          physics: const ClampingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: state.recentlyViewedDrawingTiles.length,
+                          itemBuilder: (context, index) {
+                            final tile =
+                                state.recentlyViewedDrawingTiles[index];
+                            return _RecentlyViewedDrawingTile(
                               title: tile.title,
                               subtitle: tile.subtitle,
-                              drawingThumbnailUrl: tile.drawingThumbnailUrl);
-                        }),
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(width: 16.0),
-                      );
-                    } else if (state is FetchingHomeScreenContentState) {
-                      return const BarShimmer(
-                        baseColor: Colors.grey,
-                        highlightColor: Colors.white,
-                        height: 20.0,
-                      );
-                    } else if (state is HomeScreenFetchErrorState) {
-                      return Text(state.errorMessage);
-                    } else {
-                      return Container();
-                    }
-                  })))
-        ]));
+                              drawingThumbnailUrl: tile.drawingThumbnailUrl,
+                            );
+                          },
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 16.0),
+                        );
+                      } else if (state is FetchingHomeScreenContentState) {
+                        return const BarShimmer(
+                          baseColor: Colors.grey,
+                          highlightColor: Colors.white,
+                          height: 20.0,
+                        );
+                      } else if (state is HomeScreenFetchErrorState) {
+                        return Center(
+                          child: Text(
+                            state.errorMessage,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        );
+                      } else {
+                        return const SizedBox();
+                      }
+                    },
+                  ),
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
   }
+}
+
+class WebScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+      };
 }
 
 class _RecentlyViewedDrawingTile extends StatelessWidget {
